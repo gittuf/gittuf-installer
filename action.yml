@@ -67,6 +67,7 @@ runs:
         # sig="${filename}.sig" TODO: verify using cosign
 
         curl -sL https://github.com/gittuf/gittuf/releases/download/v${{ inputs.gittuf-version }}/${filename} -o $HOME/.gittuf/$executable_name
+        chmod +x $HOME/.gittuf/$executable_name
     - if: ${{ runner.os == 'Linux' || runner.os == 'macOS' }}
       run: echo "$HOME/.gittuf" >> $GITHUB_PATH
       shell: bash
