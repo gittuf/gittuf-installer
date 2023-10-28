@@ -1,0 +1,75 @@
+name: gittuf-installer
+author: gittuf
+description: 'Installs gittuf and includes it in your path'
+inputs:
+  gittuf-version:
+    description: 'Version of gittuf to install'
+    required: false
+    default: '0.1.0'
+runs:
+  using: 'composite'
+  steps:
+    - shell: bash
+      run: |
+        #!/bin/bash
+
+        # TODO: log / error messages
+
+        mkdir -p $HOME/.gittuf
+        executable_name="gittuf"
+
+        if [[ ${{ inputs.gittuf-version }} == "main"]]; then
+          GOBIN=$(go env GOPATH)/bin
+          go install github.com/gittuf/gittuf@main
+          ln -s $GOBIN/$executable_name $HOME/.gittuf/$executable_name
+          exit 0
+        fi
+
+        filename_prefix="gittuf_${{ inputs.gittuf-version }}"
+
+        case ${{ runner.os }} in
+          Linux)
+            case ${{ runner.arch }} in
+              X64)
+                filename_suffix="linux_amd64"
+                ;;
+              ARM64)
+                filename_suffix="linux_arm64"
+                ;;
+            esac
+            ;;
+
+          macOS)
+            case ${{ runner.arch }} in
+              X64)
+                filename_suffix="darwin_amd64"
+                ;;
+              ARM64)
+                filename_suffix="darwin_arm64"
+                ;;
+            esac
+            ;;
+
+          Windows)
+            case ${{ runner.arch }} in
+              X64)
+                filename_suffix="windows_amd64.exe"
+                ;;
+              ARM64)
+                filename_suffix="windows_arm64.exe"
+                ;;
+            esac
+            ;;
+        esac
+
+        filename="${filename_prefix}_${filename_suffix}"
+        # cert="${filename}.pem" TODO: verify using cosign
+        # sig="${filename}.sig" TODO: verify using cosign
+
+        curl -sL https://github.com/gittuf/gittuf/releases/download/v${{ inputs.gittuf-version }}/${filename} -o $HOME/.gittuf/$executable_name
+    - if: ${{ runner.os == 'Linux' || runner.os == 'macOS' }}
+      run: echo "$HOME/.gittuf" >> $GITHUB_PATH
+      shell: bash
+    - if: ${{ runner.os == 'Windows' }}
+      run: echo "$HOME/.gittuf" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      shell: pwsh

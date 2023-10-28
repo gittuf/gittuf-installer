@@ -1,0 +1,19 @@
+name: test
+on:
+  pull_request:
+  push:
+    branches:
+      - 'main'
+jobs:
+  test_gittuf_installer:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    name: Test gittuf installer
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+      - name: Install gittuf
+        uses: ./
+      - name: Verify install
+        run: gittuf version
