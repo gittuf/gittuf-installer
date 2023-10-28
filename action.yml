@@ -18,7 +18,7 @@ runs:
         mkdir -p $HOME/.gittuf
         executable_name="gittuf"
 
-        if [[ ${{ inputs.gittuf-version }} == "main"]]; then
+        if [[ ${{ inputs.gittuf-version }} == "main" ]]; then
           GOBIN=$(go env GOPATH)/bin
           go install github.com/gittuf/gittuf@main
           ln -s $GOBIN/$executable_name $HOME/.gittuf/$executable_name
