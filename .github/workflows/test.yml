@@ -5,15 +5,46 @@ on:
     branches:
       - 'main'
 jobs:
-  test_gittuf_installer:
+  test_gittuf_installer_with_default_version:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
-    name: Test gittuf installer
+    name: Test gittuf installer with default version
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
       - name: Install gittuf
         uses: ./
+      - name: Verify install
+        run: gittuf version
+  test_gittuf_installer_with_specific_version:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    name: Test gittuf installer with specific version
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+      - name: Install gittuf
+        uses: ./
+        with:
+          gittuf-version: '0.1.0'
+      - name: Verify install
+        run: gittuf version
+  test_gittuf_installer_from_main_branch:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    name: Test gittuf installer from main branch
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+      - uses: actions/setup-go@93397bea11091df50f3d7e59dc26a7711a8bcfbe
+        with:
+          go-version: '1.21'
+      - name: Install gittuf
+        uses: ./
+        with:
+          gittuf-version: 'main'
       - name: Verify install
         run: gittuf version
