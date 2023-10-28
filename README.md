@@ -10,4 +10,4 @@ gittuf-installer is under initial development. Please do not use it just yet!
 ## Optional Input
 
 `gittuf-version`: Used to specify the version of gittuf to install (default:
-`v0.1.0`).
+`0.1.0`). Note: do not prefix `v` in the version number.
