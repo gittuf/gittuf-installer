@@ -9,19 +9,26 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - name: Provision cosign
+      uses: sigstore/cosign-installer@11086d25041f77fe8fe7b9ea4e48e3b9192b8f19
     - shell: bash
       run: |
         #!/bin/bash
 
         # TODO: log / error messages
 
-        mkdir -p $HOME/.gittuf
+        gittuf_dir="$HOME/.gittuf"
         executable_name="gittuf"
+        executable_path="$gittuf_dir/$executable_name"
+        cert_path="$executable_path.pem"
+        sig_path="$executable_path.sig"
+
+        mkdir -p $gittuf_dir
 
         if [[ ${{ inputs.gittuf-version }} == "main" ]]; then
           GOBIN=$(go env GOPATH)/bin
           go install github.com/gittuf/gittuf@main
-          ln -s $GOBIN/$executable_name $HOME/.gittuf/$executable_name
+          ln -s $GOBIN/$executable_name $executable_path
           exit 0
         fi
 
@@ -63,11 +70,23 @@ runs:
         esac
 
         filename="${filename_prefix}_${filename_suffix}"
-        # cert="${filename}.pem" TODO: verify using cosign
-        # sig="${filename}.sig" TODO: verify using cosign
+        cert="${filename}.pem"
+        sig="${filename}.sig"
 
-        curl -sL https://github.com/gittuf/gittuf/releases/download/v${{ inputs.gittuf-version }}/${filename} -o $HOME/.gittuf/$executable_name
-        chmod +x $HOME/.gittuf/$executable_name
+        curl -sL https://github.com/gittuf/gittuf/releases/download/v${{ inputs.gittuf-version }}/${filename} -o $executable_path
+        curl -sL https://github.com/gittuf/gittuf/releases/download/v${{ inputs.gittuf-version }}/${cert} -o $cert_path
+        curl -sL https://github.com/gittuf/gittuf/releases/download/v${{ inputs.gittuf-version }}/${sig} -o $sig_path
+
+        expected_identity="https://github.com/gittuf/gittuf/.github/workflows/release.yml@refs/tags/v${{ inputs.gittuf-version }}"
+        expected_issuer="https://token.actions.githubusercontent.com"
+
+        cosign verify-blob $executable_path \
+          --certificate $cert_path \
+          --certificate-identity $expected_identity \
+          --certificate-oidc-issuer $expected_issuer \
+          --signature $sig_path
+
+        chmod +x $executable_path
     - if: ${{ runner.os == 'Linux' || runner.os == 'macOS' }}
       run: echo "$HOME/.gittuf" >> $GITHUB_PATH
       shell: bash
