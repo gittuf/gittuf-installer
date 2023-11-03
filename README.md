@@ -5,10 +5,9 @@ gittuf policies for your Git repositories.
 
 ## Current Status
 
-gittuf-installer is under initial development. Please do not use it until key
-issues like [#1](https://github.com/gittuf/gittuf-installer/issues/1),
-[#2](https://github.com/gittuf/gittuf-installer/issues/2), and
-[#3](https://github.com/gittuf/gittuf-installer/issues/3) are resolved.
+gittuf-installer is under initial development. Feel free to give it a whirl but
+bear in mind that
+[gittuf itself is still in alpha](https://github.com/gittuf/gittuf#current-status)!
 
 ## Optional Input
 
