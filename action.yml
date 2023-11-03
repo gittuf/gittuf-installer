@@ -1,3 +1,4 @@
+# Inspired by sigstore/cosign-installer
 name: gittuf-installer
 author: gittuf
 description: 'Installs gittuf and includes it in your path'
@@ -9,22 +10,35 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - name: Provision cosign
+      uses: sigstore/cosign-installer@11086d25041f77fe8fe7b9ea4e48e3b9192b8f19
     - shell: bash
       run: |
         #!/bin/bash
 
-        # TODO: log / error messages
+        shopt -s expand_aliases
+        alias log_info="echo \"INFO:\""
+        alias log_error="echo \"ERROR:\""
 
-        mkdir -p $HOME/.gittuf
+        set -e
+
+        gittuf_dir="$HOME/.gittuf"
         executable_name="gittuf"
+        executable_path="$gittuf_dir/$executable_name"
+        cert_path="$executable_path.pem"
+        sig_path="$executable_path.sig"
+
+        mkdir -p $gittuf_dir
 
         if [[ ${{ inputs.gittuf-version }} == "main" ]]; then
+          log_info "installing gittuf using 'go install' from the 'main' branch"
           GOBIN=$(go env GOPATH)/bin
           go install github.com/gittuf/gittuf@main
-          ln -s $GOBIN/$executable_name $HOME/.gittuf/$executable_name
+          ln -s $GOBIN/$executable_name $executable_path
           exit 0
         fi
 
+        log_info "installing gittuf v${{ inputs.gittuf-version }}"
         filename_prefix="gittuf_${{ inputs.gittuf-version }}"
 
         case ${{ runner.os }} in
@@ -35,6 +49,10 @@ runs:
                 ;;
               ARM64)
                 filename_suffix="linux_arm64"
+                ;;
+              *)
+                log_error "unsupported architecture ${{ runner.arch }}"
+                exit 1
                 ;;
             esac
             ;;
@@ -47,6 +65,10 @@ runs:
               ARM64)
                 filename_suffix="darwin_arm64"
                 ;;
+              *)
+                log_error "unsupported architecture ${{ runner.arch }}"
+                exit 1
+                ;;
             esac
             ;;
 
@@ -58,16 +80,42 @@ runs:
               ARM64)
                 filename_suffix="windows_arm64.exe"
                 ;;
+              *)
+                log_error "unsupported architecture ${{ runner.arch }}"
+                exit 1
+                ;;
             esac
+            ;;
+
+          *)
+            log_error "unsupported OS ${{ runner.os }}"
+            exit 1
             ;;
         esac
 
         filename="${filename_prefix}_${filename_suffix}"
-        # cert="${filename}.pem" TODO: verify using cosign
-        # sig="${filename}.sig" TODO: verify using cosign
+        cert="${filename}.pem"
+        sig="${filename}.sig"
 
-        curl -sL https://github.com/gittuf/gittuf/releases/download/v${{ inputs.gittuf-version }}/${filename} -o $HOME/.gittuf/$executable_name
-        chmod +x $HOME/.gittuf/$executable_name
+        log_info "fetching $filename, $cert, and $sig"
+        curl -sL https://github.com/gittuf/gittuf/releases/download/v${{ inputs.gittuf-version }}/${filename} -o $executable_path
+        curl -sL https://github.com/gittuf/gittuf/releases/download/v${{ inputs.gittuf-version }}/${cert} -o $cert_path
+        curl -sL https://github.com/gittuf/gittuf/releases/download/v${{ inputs.gittuf-version }}/${sig} -o $sig_path
+
+        expected_identity="https://github.com/gittuf/gittuf/.github/workflows/release.yml@refs/tags/v${{ inputs.gittuf-version }}"
+        expected_issuer="https://token.actions.githubusercontent.com"
+
+        log_info "verifying signature using cosign"
+        log_info "expected identity is '$expected_identity'"
+        log_info "expected issuer is '$expected_issuer'"
+        cosign verify-blob $executable_path \
+          --certificate $cert_path \
+          --certificate-identity $expected_identity \
+          --certificate-oidc-issuer $expected_issuer \
+          --signature $sig_path
+
+        chmod +x $executable_path
+        log_info "installation successful!"
     - if: ${{ runner.os == 'Linux' || runner.os == 'macOS' }}
       run: echo "$HOME/.gittuf" >> $GITHUB_PATH
       shell: bash
