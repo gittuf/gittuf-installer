@@ -6,7 +6,7 @@ inputs:
   gittuf-version:
     description: 'Version of gittuf to install'
     required: false
-    default: '0.5.1'
+    default: '0.5.2'
 runs:
   using: 'composite'
   steps:
