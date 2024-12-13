@@ -12,6 +12,6 @@ bear in mind that
 ## Optional Input
 
 `gittuf-version`: Used to specify the version of gittuf to install (default:
-`0.6.2`). In addition to the specific version number, `main` is also supported
+`0.8.0`). In addition to the specific version number, `main` is also supported
 to build off the [source repository](https://github.com/gittuf/gittuf)'s `main`
 branch. Note: do not prefix `v` in the version number.
