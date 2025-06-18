@@ -11,7 +11,7 @@ runs:
   using: 'composite'
   steps:
     - name: Provision cosign
-      uses: sigstore/cosign-installer@3454372f43399081ed03b604cb2d021dabca52bb
+      uses: sigstore/cosign-installer@fb28c2b6339dcd94da6e4cbcbc5e888961f6f8c3
     - shell: bash
       run: |
         #!/bin/bash
