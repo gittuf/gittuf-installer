@@ -12,7 +12,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     name: Test gittuf installer with default version
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
       - name: Install gittuf
         uses: ./
       - name: Verify install
@@ -24,7 +24,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     name: Test gittuf installer with specific version
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
       - name: Install gittuf
         uses: ./
         with:
@@ -38,7 +38,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     name: Test gittuf installer from main branch
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
       - uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5
         with:
           go-version: '1.25'
