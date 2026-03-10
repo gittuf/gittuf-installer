@@ -6,7 +6,7 @@ inputs:
   gittuf-version:
     description: 'Version of gittuf to install'
     required: false
-    default: '0.12.0'
+    default: '0.13.1'
 runs:
   using: 'composite'
   steps:
@@ -25,8 +25,8 @@ runs:
         gittuf_dir="$HOME/.gittuf"
         executable_name="gittuf"
         executable_path="$gittuf_dir/$executable_name"
-        cert_path="$executable_path.pem"
-        sig_path="$executable_path.sig"
+        bundle_path="$executable_path.sigstore.json"
+        checksums_path="checksums.txt"
 
         mkdir -p $gittuf_dir
 
@@ -94,13 +94,13 @@ runs:
         esac
 
         filename="${filename_prefix}_${filename_suffix}"
-        cert="${filename}.pem"
-        sig="${filename}.sig"
+        checksums="checksums.txt"
+        bundle="${checksums}.sigstore.json"
 
-        log_info "fetching $filename, $cert, and $sig"
-        curl -sL https://github.com/gittuf/gittuf/releases/download/v${{ inputs.gittuf-version }}/${filename} -o $executable_path
-        curl -sL https://github.com/gittuf/gittuf/releases/download/v${{ inputs.gittuf-version }}/${cert} -o $cert_path
-        curl -sL https://github.com/gittuf/gittuf/releases/download/v${{ inputs.gittuf-version }}/${sig} -o $sig_path
+        log_info "fetching $filename, $checksums, and $bundle"
+        curl -sL https://github.com/gittuf/gittuf/releases/download/v${{ inputs.gittuf-version }}/${filename} -o $filename
+        curl -sL https://github.com/gittuf/gittuf/releases/download/v${{ inputs.gittuf-version }}/${checksums} -o $checksums_path
+        curl -sL https://github.com/gittuf/gittuf/releases/download/v${{ inputs.gittuf-version }}/${bundle} -o $bundle_path
 
         expected_identity="https://github.com/gittuf/gittuf/.github/workflows/release.yml@refs/tags/v${{ inputs.gittuf-version }}"
         expected_issuer="https://token.actions.githubusercontent.com"
@@ -108,13 +108,37 @@ runs:
         log_info "verifying signature using cosign"
         log_info "expected identity is '$expected_identity'"
         log_info "expected issuer is '$expected_issuer'"
-        cosign verify-blob $executable_path \
-          --certificate $cert_path \
+        cosign verify-blob $checksums_path \
+          --bundle $bundle_path \
           --certificate-identity $expected_identity \
-          --certificate-oidc-issuer $expected_issuer \
-          --signature $sig_path
+          --certificate-oidc-issuer $expected_issuer
+
+        case ${{ runner.os }} in
+          Linux)
+            log_info "verifying that checksum of gittuf binary matches expected checksum"
+            grep " ${filename}" ${checksums} | sha256sum -c
+            ;;
+
+          macOS)
+           log_info "verifying that checksum of gittuf binary matches expected checksum"
+            grep " ${filename}" ${checksums} | shasum -a 256 -c
+            ;;
+
+          Windows)
+            log_info "verifying that checksum of gittuf binary matches expected checksum"
+            grep " ${filename}" ${checksums} | sha256sum -c
+            ;;
+
+          *)
+            log_error "unsupported OS ${{ runner.os }}"
+            exit 1
+            ;;
+        esac
+
+        mv $filename $executable_path
 
         chmod +x $executable_path
+        $executable_path version
         log_info "installation successful!"
     - if: ${{ runner.os == 'Linux' || runner.os == 'macOS' }}
       run: echo "$HOME/.gittuf" >> $GITHUB_PATH
