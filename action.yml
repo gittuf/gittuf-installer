@@ -26,7 +26,8 @@ runs:
         executable_name="gittuf"
         executable_path="$gittuf_dir/$executable_name"
         cert_path="$executable_path.pem"
-        sig_path="$executable_path.sig"
+        bundle_path="$executable_path.sigstore.json"
+        checksums_path="checksums.txt"
 
         mkdir -p $gittuf_dir
 
@@ -95,12 +96,14 @@ runs:
 
         filename="${filename_prefix}_${filename_suffix}"
         cert="${filename}.pem"
-        sig="${filename}.sig"
+        checksums="checksums.txt"
+        bundle="${filename}.sigstore.json"
 
-        log_info "fetching $filename, $cert, and $sig"
+        log_info "fetching $filename, $cert, $checksums, and $bundle"
         curl -sL https://github.com/gittuf/gittuf/releases/download/v${{ inputs.gittuf-version }}/${filename} -o $executable_path
         curl -sL https://github.com/gittuf/gittuf/releases/download/v${{ inputs.gittuf-version }}/${cert} -o $cert_path
-        curl -sL https://github.com/gittuf/gittuf/releases/download/v${{ inputs.gittuf-version }}/${sig} -o $sig_path
+        curl -sL https://github.com/gittuf/gittuf/releases/download/v${{ inputs.gittuf-version }}/${checksums} -o $checksums_path
+        curl -sL https://github.com/gittuf/gittuf/releases/download/v${{ inputs.gittuf-version }}/${bundle} -o $bundle_path
 
         expected_identity="https://github.com/gittuf/gittuf/.github/workflows/release.yml@refs/tags/v${{ inputs.gittuf-version }}"
         expected_issuer="https://token.actions.githubusercontent.com"
@@ -108,11 +111,12 @@ runs:
         log_info "verifying signature using cosign"
         log_info "expected identity is '$expected_identity'"
         log_info "expected issuer is '$expected_issuer'"
-        cosign verify-blob $executable_path \
-          --certificate $cert_path \
+        cosign verify-blob $checksums_path \
+          --bundle $bundle_path \.
           --certificate-identity $expected_identity \
-          --certificate-oidc-issuer $expected_issuer \
-          --signature $sig_path
+          --certificate-oidc-issuer $expected_issuer
+
+        sha256sum --check --ignore-missing checksums.txt
 
         chmod +x $executable_path
         log_info "installation successful!"
