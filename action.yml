@@ -97,7 +97,7 @@ runs:
         filename="${filename_prefix}_${filename_suffix}"
         cert="${filename}.pem"
         checksums="checksums.txt"
-        bundle="${filename}.sigstore.json"
+        bundle="${checksums}.sigstore.json"
 
         log_info "fetching $filename, $cert, $checksums, and $bundle"
         curl -sL https://github.com/gittuf/gittuf/releases/download/v${{ inputs.gittuf-version }}/${filename} -o $executable_path
@@ -112,7 +112,7 @@ runs:
         log_info "expected identity is '$expected_identity'"
         log_info "expected issuer is '$expected_issuer'"
         cosign verify-blob $checksums_path \
-          --bundle $bundle_path \.
+          --bundle $bundle_path \
           --certificate-identity $expected_identity \
           --certificate-oidc-issuer $expected_issuer
 
