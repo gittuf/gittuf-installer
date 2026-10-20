@@ -28,7 +28,7 @@ jobs:
       - name: Install gittuf
         uses: ./
         with:
-          gittuf-version: '0.16.0'
+          gittuf-version: '0.17.0'
       - name: Verify install
         run: gittuf version
   test_gittuf_installer_from_main_branch:
